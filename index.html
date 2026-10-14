@@ -815,18 +815,19 @@ function songMeta(id){
     const r=list[0]; return {album:r.collectionName||"",year:String(r.releaseDate||"").slice(0,4),art:String(r.artworkUrl100||"").replace(/100x100bb/,"600x600bb"),preview:r.previewUrl||(ok.find(x=>x.previewUrl)||{}).previewUrl||""};
   }));
 }
+function fetchT(url,ms=7000){ const c=new AbortController(), t=setTimeout(()=>c.abort(),ms); return fetch(url,{signal:c.signal}).finally(()=>clearTimeout(t)); }
 function spotifyThumb(id){ const sp=(S[id]&&S[id].sp)||(spotDb[id]&&spotDb[id].trackId); if(!sp) return Promise.resolve(null);
-  return memo("oe1:"+sp,()=>fetch("https://open.spotify.com/oembed?url="+encodeURIComponent("https://open.spotify.com/track/"+sp)).then(r=>r.ok?r.json():null).then(j=>j&&j.thumbnail_url||null)); }
+  return memo("oe1:"+sp,()=>fetchT("https://open.spotify.com/oembed?url="+encodeURIComponent("https://open.spotify.com/track/"+sp)).then(r=>r.ok?r.json():null).then(j=>j&&j.thumbnail_url||null)); }
 function artistLogo(name){
   const parts=COLLAB[name];
   return memo("logo1:"+name,()=>wikiFind(parts?{title:parts[0]}:{title:WIKI_EN[name],search:name+" band OR singer OR musician",match:normT(name)}).then(w=>{
     if(!w||!w.qid) return null;
-    return fetch("https://www.wikidata.org/w/api.php?action=wbgetclaims&format=json&origin=*&property=P154&entity="+w.qid).then(r=>r.json()).then(j=>{
+    return fetchT("https://www.wikidata.org/w/api.php?action=wbgetclaims&format=json&origin=*&property=P154&entity="+w.qid).then(r=>r.json()).then(j=>{
       const c=j.claims&&j.claims.P154&&j.claims.P154[0], f=c&&c.mainsnak&&c.mainsnak.datavalue&&c.mainsnak.datavalue.value;
       return f?"https://commons.wikimedia.org/wiki/Special:FilePath/"+encodeURIComponent(String(f).replace(/ /g,"_"))+"?width=500":null;});
   }));
 }
-function setImg(el,url,alt,onfail){ if(!el||!url){ if(onfail) onfail(); return; } const im=new Image(); im.alt=alt; im.loading="lazy";
+function setImg(el,url,alt,onfail){ if(!el||!url){ if(onfail) onfail(); return; } const im=new Image(); im.alt=alt; im.decoding="async";
   im.onload=()=>{ if(document.body.contains(el)){ el.textContent=""; el.appendChild(im); el.classList.remove("name"); } };
   im.onerror=()=>{ if(onfail&&document.body.contains(el)) onfail(); }; im.src=url; }
 function cardHTML({coverLabel,logoText,playId,facts}){
