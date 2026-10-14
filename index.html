@@ -88,7 +88,7 @@ h3{font-size:18px}
 .play.big{width:auto;height:auto;border-radius:999px;padding:10px 18px;font-size:15px;font-weight:500;background:var(--accent);color:var(--on-accent);border-color:var(--accent);gap:8px;display:inline-flex}
 @keyframes pulse{50%{opacity:.4}}
 .pk-player{flex:none}.pk-player iframe{display:block;width:100%;height:80px;border:0;border-radius:12px}
-.player{position:fixed;left:50%;bottom:calc(12px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);width:min(560px,calc(100vw - 24px));z-index:25;background:var(--surface-2);border:1px solid var(--line);border-radius:14px;padding:8px 8px 4px;box-shadow:0 10px 40px rgba(0,0,0,.5)}
+.player{position:fixed;left:50%;bottom:calc(12px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);width:min(560px,calc(100vw - 24px));z-index:35;background:var(--surface-2);border:1px solid var(--line);border-radius:14px;padding:8px 8px 4px;box-shadow:0 10px 40px rgba(0,0,0,.5)}
 .player iframe{display:block;width:100%;height:80px;border:0;border-radius:10px}
 .player[hidden]{display:none}
 .player .x{position:absolute;top:-12px;right:-8px;width:28px;height:28px;border-radius:50%;border:1px solid var(--line);background:var(--surface);color:var(--fg);cursor:pointer;font-size:14px;line-height:1}
@@ -267,6 +267,24 @@ details.art summary:hover{background:var(--surface-2)}
 .nl-arrows{display:flex;gap:4px}
 .ar{width:34px;height:34px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--fg);cursor:pointer}
 .ar:disabled{opacity:.3;cursor:default}
+.mic-btn{margin-left:auto;flex:none;display:inline-flex;align-items:center;gap:4px;border:1px solid var(--line);background:var(--surface);color:var(--fg);border-radius:999px;padding:7px 14px;font:inherit;font-size:14px;cursor:pointer;white-space:nowrap}
+.mic-btn:hover{border-color:var(--accent);color:var(--accent)}
+@media (max-width:900px){.mic-btn span{display:none}.mic-btn{padding:7px 10px}}
+.hk-back{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:30;display:flex;align-items:center;justify-content:center;padding:16px}
+.hk-back[hidden]{display:none}
+.hk{position:relative;width:min(520px,100%);max-height:calc(100vh - 32px);overflow:auto;background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:24px;box-shadow:0 20px 60px rgba(0,0,0,.5)}
+.hk h2{font-family:var(--display);font-size:26px;margin:6px 0 8px}
+.hk .x{position:absolute;top:12px;right:12px;width:32px;height:32px;border-radius:50%;border:1px solid var(--line);background:var(--surface-2);color:var(--fg);cursor:pointer}
+.hk-go{margin-top:12px;font-size:16px;padding:12px 22px}
+.hk-links{margin-top:16px;font-size:13.5px;color:var(--muted)}
+.hk-row{display:flex;gap:8px;margin-top:14px}.hk-row input{flex:1;min-width:0;background:var(--bg);border:1px solid var(--line);border-radius:999px;padding:9px 14px;color:var(--fg);font:inherit;font-size:14px}
+.hk-meter,.hk-prog{height:8px;border-radius:4px;background:var(--surface-2);overflow:hidden;margin-top:14px}.hk-meter i,.hk-prog i{display:block;height:100%;width:0;background:var(--accent);transition:width .1s linear}.hk-meter i{opacity:.5}
+.hk-res{display:flex;gap:16px;align-items:center;margin-top:8px}.hk-res img{width:96px;height:96px;border-radius:10px;object-fit:cover;flex:none}
+.hk-art{margin:0;color:var(--fg)}
+.hk-yes{color:var(--accent);margin:14px 0 6px;font-weight:500}.hk-no{color:var(--muted);margin:14px 0 6px}
+.hk-stats{display:flex;flex-wrap:wrap;gap:8px 16px;font-size:14px;color:var(--muted)}.hk-stats b{color:var(--fg)}
+.hk-acts{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px}.hk-acts .play.big{width:auto;padding:10px 18px}
+
 .lk-h{margin:26px 0 8px;font-size:15px;font-family:var(--body);font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
 .lk-row{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1.2fr) auto;gap:14px;align-items:center;padding:12px 4px;border-bottom:1px solid var(--line)}
 .lk-song a{color:var(--fg);text-decoration:none}.lk-song small,.lk-found small{display:block;color:var(--muted);font-size:12.5px}
@@ -359,6 +377,7 @@ footer .wrap{padding-block:18px 28px;color:var(--faint);font-size:12.5px;display
       <a href="#records" data-nav="records">Records</a>
       <a href="#nieuwe-lijst" data-nav="nieuwe-lijst">Nieuwe lijst</a>
     </nav>
+    <button class="mic-btn" id="mic-btn" type="button" aria-label="Wat hoor ik? Laat een nummer herkennen" title="Wat hoor ik?">🎤<span> Wat hoor ik?</span></button>
   </div>
 </header>
 <main class="wrap" id="app"></main>
@@ -1732,6 +1751,122 @@ function rcRender(){
   });
 }
 
+
+/* ---------- Wat hoor ik? (herkennen via de microfoon, websiteversie, AudD) ---------- */
+const HK_TOKEN="audd-token", HK_LOG="herkend-v1", HK_SECS=10;
+const hkGet=(k,d)=>{try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v);}catch(e){return d;}};
+const hkSet=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}};
+const hkKey=(a,t)=>normA(String(a).split(/,|&| feat\.? | ft\.? /i)[0])+"|"+normA(String(t).replace(/\s+-\s+.*$/,"").replace(/[\(\[].*?[\)\]]/g,""));
+let hkIndex=null;
+function hkFind(r){
+  if(!hkIndex){ hkIndex={sp:{},key:{}}; Object.values(S).forEach(s=>{ if(s.sp) hkIndex.sp[s.sp]=s.id; const k=hkKey(s.a,s.t); if(!hkIndex.key[k]||s.n) hkIndex.key[k]=s.id; }); }
+  const sp=r.spotify&&r.spotify.id;
+  return (sp&&hkIndex.sp[sp])||hkIndex.key[hkKey(r.artist,r.title)]||null;
+}
+function hkWav(chunks,rate){ // mono 16-bit PCM
+  const len=chunks.reduce((n,c)=>n+c.length,0), buf=new ArrayBuffer(44+len*2), v=new DataView(buf); let o=0;
+  const w=s=>{for(let i=0;i<s.length;i++)v.setUint8(o++,s.charCodeAt(i));}, u32=x=>{v.setUint32(o,x,true);o+=4;}, u16=x=>{v.setUint16(o,x,true);o+=2;};
+  w("RIFF");u32(36+len*2);w("WAVE");w("fmt ");u32(16);u16(1);u16(1);u32(rate);u32(rate*2);u16(2);u16(16);w("data");u32(len*2);
+  chunks.forEach(c=>{for(let i=0;i<c.length;i++){const x=Math.max(-1,Math.min(1,c[i]));v.setInt16(o,x<0?x*0x8000:x*0x7fff,true);o+=2;}});
+  return new Blob([buf],{type:"audio/wav"}); }
+async function hkRecord(onTick){
+  const stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:false,noiseSuppression:false,autoGainControl:false}});
+  const ctx=new (window.AudioContext||window.webkitAudioContext)(); const src=ctx.createMediaStreamSource(stream);
+  const proc=ctx.createScriptProcessor(4096,1,1), chunks=[]; let level=0;
+  proc.onaudioprocess=e=>{ const d=e.inputBuffer.getChannelData(0); chunks.push(new Float32Array(d)); let m=0; for(let i=0;i<d.length;i+=32) m=Math.max(m,Math.abs(d[i])); level=m; };
+  src.connect(proc); proc.connect(ctx.destination);
+  const t0=Date.now();
+  await new Promise(res=>{ const iv=setInterval(()=>{ const s=(Date.now()-t0)/1000; onTick(Math.min(1,s/HK_SECS),level); if(s>=HK_SECS){clearInterval(iv);res();} },100); });
+  proc.disconnect(); src.disconnect(); stream.getTracks().forEach(t=>t.stop()); const rate=ctx.sampleRate; ctx.close();
+  return hkWav(chunks,rate);
+}
+async function hkRecognize(blob,token){
+  const fd=new FormData(); fd.append("api_token",token); fd.append("file",blob,"opname.wav"); fd.append("return","spotify");
+  const r=await fetch("https://api.audd.io/",{method:"POST",body:fd}); return r.json();
+}
+const HK_ERR={900:"Je AudD-sleutel klopt niet. Vul hem opnieuw in.",901:"Je gratis herkenningen bij AudD zijn op. Kijk in je AudD-account.",902:"Je limiet bij AudD is bereikt. Kijk in je AudD-account."};
+function hkOpen(){
+  let dlg=document.getElementById("hk"); if(!dlg){ dlg=document.createElement("div"); dlg.id="hk"; dlg.className="hk-back"; dlg.innerHTML='<div class="hk" role="dialog" aria-modal="true" aria-label="Wat hoor ik?"><button class="x" type="button" aria-label="Sluiten">✕</button><div id="hk-body"></div></div>'; document.body.appendChild(dlg);
+    dlg.addEventListener("click",e=>{ if(e.target===dlg||e.target.closest(".x")) hkClose(); }); document.addEventListener("keydown",e=>{ if(e.key==="Escape") hkClose(); }); }
+  dlg.hidden=false; document.body.style.overflow="hidden"; hkRender(hkGet(HK_TOKEN,"")?"start":"token");
+}
+function hkClose(){ const d=document.getElementById("hk"); if(d){ d.hidden=true; document.body.style.overflow=""; } }
+function hkRender(state,data){
+  const b=document.getElementById("hk-body"); if(!b) return;
+  if(state==="token"){
+    b.innerHTML=`<div class="eyebrow">Wat hoor ik?</div><h2>Eén keer instellen</h2>
+      <p class="muted">Het herkennen gaat via <a class="alink" href="https://dashboard.audd.io/" target="_blank" rel="noopener">AudD ↗</a>. Maak daar een gratis account (300 herkenningen) en plak je <b>API token</b> hieronder. Hij wordt alleen in deze browser bewaard.</p>
+      <div class="hk-row"><input id="hk-tok" type="text" autocomplete="off" spellcheck="false" placeholder="API token van AudD" value="${esc(hkGet(HK_TOKEN,""))}"><button class="btn" id="hk-save" type="button">Opslaan</button></div>`;
+    const save=()=>{ const v=document.getElementById("hk-tok").value.trim(); if(v.length<10){ toast("Dat lijkt geen geldige sleutel."); return; } hkSet(HK_TOKEN,v); hkRender("start"); };
+    document.getElementById("hk-save").addEventListener("click",save); document.getElementById("hk-tok").addEventListener("keydown",e=>{ if(e.key==="Enter") save(); }); return; }
+  if(state==="start"){
+    b.innerHTML=`<div class="eyebrow">Wat hoor ik?</div><h2>Laat een nummer herkennen</h2><p class="muted">Houd je telefoon of laptop in de buurt van de muziek. De site luistert ${HK_SECS} seconden mee.</p>
+      <button class="btn hk-go" id="hk-go" type="button">🎤 Luisteren</button>
+      <p class="hk-links"><a class="alink" href="#herkend">Eerder herkend (${hkGet(HK_LOG,[]).length})</a> · <a class="alink" href="#" id="hk-tokedit">Sleutel wijzigen</a></p>`;
+    document.getElementById("hk-go").addEventListener("click",hkListen);
+    document.getElementById("hk-tokedit").addEventListener("click",e=>{e.preventDefault();hkRender("token");});
+    b.querySelector('a[href="#herkend"]').addEventListener("click",hkClose); return; }
+  if(state==="listen"){
+    b.innerHTML=`<div class="eyebrow">Wat hoor ik?</div><h2>Ik luister…</h2><div class="hk-meter"><i id="hk-lvl"></i></div><div class="hk-prog"><i id="hk-bar"></i></div><p class="muted" id="hk-msg">Even stil, de muziek moet goed te horen zijn.</p>`; return; }
+  if(state==="busy"){ b.innerHTML=`<div class="eyebrow">Wat hoor ik?</div><h2>Zoeken…</h2><p class="muted">Het fragment wordt vergeleken met miljoenen nummers.</p>`; return; }
+  if(state==="error"){
+    b.innerHTML=`<div class="eyebrow">Wat hoor ik?</div><h2>Dat lukte niet</h2><p class="muted">${esc(data)}</p><button class="btn" id="hk-again" type="button">Opnieuw proberen</button>${/sleutel/i.test(data)?' <button class="btn ghost" id="hk-tok2" type="button">Sleutel invullen</button>':""}`;
+    document.getElementById("hk-again").addEventListener("click",hkListen); const t=document.getElementById("hk-tok2"); if(t) t.addEventListener("click",()=>hkRender("token")); return; }
+  if(state==="none"){
+    b.innerHTML=`<div class="eyebrow">Wat hoor ik?</div><h2>Niet herkend</h2><p class="muted">Het nummer werd niet gevonden. Probeer het nog eens wat dichter bij de muziek, of bij een ander stuk van het nummer.</p><button class="btn" id="hk-again" type="button">Opnieuw luisteren</button>`;
+    document.getElementById("hk-again").addEventListener("click",hkListen); return; }
+  if(state==="result"){ b.innerHTML=hkResultHTML(data); hkWire(b,data); }
+}
+function hkResultHTML(e){
+  const s=e.id!=null?S[e.id]:null, own=s&&s.n>0;
+  const sp=e.sp?`<a class="play big found" href="https://open.spotify.com/track/${esc(e.sp)}" target="_blank" rel="noopener" aria-label="Speel ${esc(e.t)} af op Spotify">▶ Afspelen</a>`:"";
+  const stats=own?`<div class="hk-stats"><span><b>#${s.rank}</b> Top Aller Tijden</span><span><b>${s.n}×</b> in je lijsten</span>${s.best?`<span>hoogste <b>#${s.best}</b></span>`:""}${pres[s.id][N-1]?`<span>nu <b>#${pres[s.id][N-1].pos}</b></span>`:""}</div>`:"";
+  const live=s?liveOf(s.id):null;
+  return `<div class="eyebrow">Herkend</div><div class="hk-res">${e.img?`<img src="${esc(e.img)}" alt="" onerror="this.remove()">`:""}<div><h2>${esc(e.t)}</h2><p class="hk-art">${esc(e.a)}${e.alb?` · <span class="muted">${esc(e.alb)}${e.yr?" ("+esc(e.yr)+")":""}</span>`:""}</p></div></div>
+    ${own?`<p class="hk-yes">Dit nummer staat in je lijsten ${live?'<span class="chip live">Live</span>':""}</p>${stats}`:`<p class="hk-no">${s&&s.spRank?`Nog niet in je top 100, wel <b>#${s.spRank}</b> in je Spotify-ranglijst.`:"Dit nummer staat nog niet in je lijsten."}${live?' Je hebt deze artiest wel live gezien.':""}</p>`}
+    <div class="hk-acts">${sp}${own?`<a class="btn ghost" href="#nummer-${s.id}" id="hk-page">Naar het nummer</a>`:`<button class="btn ghost" type="button" id="hk-short">${e.short?"✓ Op de shortlist":"Op de shortlist zetten"}</button>`}<button class="btn ghost" type="button" id="hk-again">Nog een nummer</button></div>`;
+}
+function hkWire(b,e){
+  const pg=document.getElementById("hk-page"); if(pg) pg.addEventListener("click",hkClose);
+  const sh=document.getElementById("hk-short"); if(sh) sh.addEventListener("click",()=>{ const log=hkGet(HK_LOG,[]); const it=log.find(x=>x.when===e.when); if(it){ it.short=!it.short; e.short=it.short; hkSet(HK_LOG,log); } sh.textContent=e.short?"✓ Op de shortlist":"Op de shortlist zetten"; toast(e.short?"Op je shortlist gezet. Je vindt hem bij Eerder herkend.":"Van je shortlist gehaald."); });
+  document.getElementById("hk-again").addEventListener("click",hkListen);
+}
+async function hkListen(){
+  const token=hkGet(HK_TOKEN,""); if(!token) return hkRender("token");
+  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia) return hkRender("error","Deze browser geeft geen toegang tot de microfoon.");
+  hkRender("listen");
+  let blob;
+  try{ blob=await hkRecord((p,l)=>{ const b=document.getElementById("hk-bar"), m=document.getElementById("hk-lvl"); if(b) b.style.width=(p*100)+"%"; if(m) m.style.width=Math.min(100,l*160)+"%"; }); }
+  catch(err){ return hkRender("error",err&&err.name==="NotAllowedError"?"De site mag de microfoon niet gebruiken. Sta de microfoon toe via het slotje naast het webadres.":"De microfoon kon niet worden gestart."); }
+  hkRender("busy");
+  let j; try{ j=await hkRecognize(blob,token); }catch(err){ return hkRender("error","Geen verbinding met AudD. Controleer je internet en probeer het opnieuw."); }
+  if(j.status==="error"){ const c=j.error&&j.error.error_code; return hkRender("error",HK_ERR[c]||("AudD gaf een foutmelding"+(j.error&&j.error.error_message?": "+j.error.error_message:"."))); }
+  const r=j.result; if(!r) return hkRender("none");
+  const sp=r.spotify||{}, id=hkFind(r), img=sp.album&&sp.album.images&&sp.album.images[0]&&sp.album.images[0].url;
+  const e={when:new Date().toISOString(),a:r.artist,t:r.title,alb:r.album||"",yr:String(r.release_date||"").slice(0,4),sp:sp.id||(id!=null&&S[id].sp)||"",img:img||"",id:id!=null?id:null,short:false};
+  const log=hkGet(HK_LOG,[]); log.unshift(e); hkSet(HK_LOG,log.slice(0,300));
+  hkRender("result",e);
+}
+function viewHerkend(){
+  const log=hkGet(HK_LOG,[]);
+  const row=e=>{ const s=e.id!=null?S[e.id]:null, own=s&&s.n>0;
+    return `<div class="lk-row"><div class="lk-song">${own?`<a href="#nummer-${s.id}"><b>${esc(e.t)}</b></a>`:`<b>${esc(e.t)}</b>`}<small>${esc(e.a)}</small></div>
+      <div class="lk-found"><span class="muted">${new Date(e.when).toLocaleString("nl-NL",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"})}</span>${own?`<span class="chip ret">#${s.rank} aller tijden</span>`:e.short?'<span class="chip new">Shortlist</span>':""}</div>
+      <div class="lk-act">${e.sp?`<a class="play found" href="https://open.spotify.com/track/${esc(e.sp)}" target="_blank" rel="noopener" aria-label="Speel ${esc(e.t)} af">▶</a>`:""}${own?"":`<button class="btn ghost" type="button" data-hks="${esc(e.when)}">${e.short?"Van shortlist halen":"Op shortlist"}</button>`}</div></div>`; };
+  const shorts=log.filter(e=>e.short);
+  app.innerHTML=`<div class="eyebrow">Wat hoor ik?</div><h1 style="margin-top:10px">Eerder herkend</h1>
+    <p class="lede">Alles wat je met 🎤 hebt laten herkennen, het nieuwste eerst. Bewaard in deze browser.</p>
+    <div class="nl-actions" style="margin-top:0"><button class="btn" type="button" id="hk-new">🎤 Nieuw nummer herkennen</button>${shorts.length?`<button class="btn ghost" type="button" id="hk-copy">Kopieer shortlist (${shorts.length})</button>`:""}</div>
+    ${log.length?`<div class="lk-list" style="margin-top:16px">${log.map(row).join("")}</div>`:'<p class="muted" style="margin-top:20px">Nog niets herkend.</p>'}`;
+  document.getElementById("hk-new").addEventListener("click",hkOpen);
+  app.querySelectorAll("[data-hks]").forEach(btn=>btn.addEventListener("click",()=>{ const l=hkGet(HK_LOG,[]), it=l.find(x=>x.when===btn.dataset.hks); if(it){ it.short=!it.short; hkSet(HK_LOG,l); } viewHerkend(); }));
+  const cp=document.getElementById("hk-copy"); if(cp) cp.addEventListener("click",async()=>{ const txt="Artiest\tNummer\tSpotify\n"+shorts.map(e=>`${e.a}\t${e.t}\t${e.sp?"https://open.spotify.com/track/"+e.sp:""}`).join("\n");
+    try{ await navigator.clipboard.writeText(txt); toast("Gekopieerd. Plak het in Excel of stuur het naar Claude."); }catch(err){ toast("Kopiëren lukte niet."); } });
+}
+(function(){ const btn=document.getElementById("mic-btn"); if(!btn) return;
+  if(IS_CLAUDE){ btn.remove(); return; }
+  btn.addEventListener("click",hkOpen); window.addEventListener("hashchange",hkClose); })();
+
 /* ---------- router ---------- */
 function route(){
   const h=location.hash.slice(1)||"start";
@@ -1746,6 +1881,7 @@ function route(){
   else if(h==="spotify-koppelen"){viewLink();nav="";}
   else if(h==="nieuwe-lijst"){viewNieuweLijst();nav="nieuwe-lijst";}
   else if(h.startsWith("reconstructie-")){viewReco();nav="nieuwe-lijst";}
+  else if(h==="herkend"){viewHerkend();nav="";}
   else if(h==="spotify"){viewSpotify();nav="spotify";}
   else if(h==="spotify-aller-tijden"){viewSpotifyRank();nav="spotify";}
   else if(/^spotify-\d{4}$/.test(h)){viewSpotifyYear(+h.slice(8));nav="spotify";}
