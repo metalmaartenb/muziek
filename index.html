@@ -87,6 +87,7 @@ h3{font-size:18px}
 .play.ready{background:var(--accent);color:var(--on-accent);border-color:var(--accent)}
 .play.big{width:auto;height:auto;border-radius:999px;padding:10px 18px;font-size:15px;font-weight:500;background:var(--accent);color:var(--on-accent);border-color:var(--accent);gap:8px;display:inline-flex}
 @keyframes pulse{50%{opacity:.4}}
+.pk-player iframe{display:block;width:100%;height:80px;border:0;border-radius:12px}
 .player{position:fixed;left:50%;bottom:calc(12px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);width:min(560px,calc(100vw - 24px));z-index:25;background:var(--surface-2);border:1px solid var(--line);border-radius:14px;padding:8px 8px 4px;box-shadow:0 10px 40px rgba(0,0,0,.5)}
 .player iframe{display:block;width:100%;height:80px;border:0;border-radius:10px}
 .player .x{position:absolute;top:-12px;right:-8px;width:28px;height:28px;border-radius:50%;border:1px solid var(--line);background:var(--surface);color:var(--fg);cursor:pointer;font-size:14px;line-height:1}
@@ -784,7 +785,7 @@ function wikiBox(elId,label,opts,fallbackQ){
     el.innerHTML=`<div><h3>${esc(label)}</h3><p>${esc(w.extract)}</p><div class="src">Bron: <a href="${esc(w.url)}" target="_blank" rel="noopener">Wikipedia${w.lang==="en"?" (Engels)":""} · ${esc(w.title)} ↗</a></div></div>${w.thumb?`<img src="${esc(w.thumb)}" alt="" loading="lazy">`:""}`;
   }).catch(()=>{
     if(!document.body.contains(el)) return;
-    el.className="wiki"; el.innerHTML=`<div><h3>${esc(label)}</h3><p class="muted">Informatie van Wikipedia kan hier niet worden opgehaald. In de websiteversie verschijnt die automatisch.</p><div class="src"><a href="${wpSearchLink(fallbackQ)}" target="_blank" rel="noopener">Lees verder op Wikipedia ↗</a></div></div>`;
+    el.className="wiki"; el.innerHTML=`<div><h3>${esc(label)}</h3><p class="muted">${IS_CLAUDE?"Informatie van Wikipedia kan hier niet worden opgehaald. In de websiteversie verschijnt die automatisch.":"Wikipedia reageert nu niet. Probeer het later nog eens."}</p><div class="src"><a href="${wpSearchLink(fallbackQ)}" target="_blank" rel="noopener">Lees verder op Wikipedia ↗</a></div></div>`;
   });
 }
 function artistWiki(a,prefix){
@@ -830,11 +831,13 @@ function artistLogo(name){
 function setImg(el,url,alt,onfail){ if(!el||!url){ if(onfail) onfail(); return; } const im=new Image(); im.alt=alt; im.decoding="async";
   im.onload=()=>{ if(document.body.contains(el)){ el.textContent=""; el.appendChild(im); el.classList.remove("name"); } };
   im.onerror=()=>{ if(onfail&&document.body.contains(el)) onfail(); }; im.src=url; }
-function cardHTML({coverLabel,logoText,playId,facts}){
+function embedId(id){ const u=trackUrl(id)||spotCache[id]; const m=u&&String(u).match(/open\.spotify\.com\/track\/([A-Za-z0-9]+)/); return m?m[1]:null; }
+function cardHTML({coverLabel,logoText,playId,facts,embed}){
+  const tid=embed&&playId&&!IS_CLAUDE?embedId(playId):null;
   return `<aside class="platenkaart" aria-label="Platenkaart">
     <div class="pk-cover" id="pk-cover">${coverLabel}</div>
     <div class="pk-logo name" id="pk-logo">${esc(logoText)}</div>
-    ${playId?playHTML(playId,true):""}
+    ${tid?`<div class="pk-player"><iframe title="Spotify-speler: ${esc(S[playId].t)}" src="https://open.spotify.com/embed/track/${encodeURIComponent(tid)}?utm_source=generator&theme=0" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe></div>`:(playId?playHTML(playId,true):"")}
     <div class="pk-facts">${facts.map(([k,v,id,acc])=>`<div><span>${k}</span><b${id?` id="${id}"`:""}${acc?' class="acc"':""}>${v}</b></div>`).join("")}</div>
   </aside>`;
 }
@@ -850,14 +853,14 @@ function loadSongCard(id){
     setFact("pk-album",m&&m.album||s.alb||"onbekend"); setFact("pk-year",m&&m.year||s.yr||"onbekend");
     if(!cov()) return;
     if(m&&m.art) setImg(cov(),m.art,"Hoes van "+(m.album||s.t),trySpotify); else trySpotify();
-  }).catch(()=>{ setFact("pk-album",s.alb?s.alb+" (Spotify-versie)":"—"); setFact("pk-year",s.yr||"—"); const el=cov(); if(el) el.innerHTML=`Albumhoes<br><small>verschijnt in de websiteversie</small>`; });
+  }).catch(()=>{ setFact("pk-album",s.alb?s.alb+" (Spotify-versie)":"—"); setFact("pk-year",s.yr||"—"); const el=cov(); if(el) el.innerHTML=IS_CLAUDE?`Albumhoes<br><small>verschijnt in de websiteversie</small>`:`Geen hoes gevonden<br><small>${esc(s.t)}</small>`; });
   loadLogo(s.lv||((artistOf(id)||{}).name)||s.a.split(", ")[0]);
 }
 function loadArtistCard(a){
   const cov=live$(document.getElementById("pk-cover"));
   const opts=COLLAB[a.name]?{title:COLLAB[a.name][0]}:{title:WIKI_EN[a.name],search:a.name+" band OR singer OR musician",match:normT(a.name)};
   wikiFind(opts).then(w=>cov()&&setImg(cov(),w&&w.thumb&&w.thumb.replace(/\/\d+px-/,"/600px-"),"Foto van "+a.name,()=>{const el=cov(); if(el) el.innerHTML="Geen foto gevonden";}))
-    .catch(()=>{const el=cov(); if(el) el.innerHTML=`Foto<br><small>verschijnt in de websiteversie</small>`;});
+    .catch(()=>{const el=cov(); if(el) el.innerHTML=IS_CLAUDE?`Foto<br><small>verschijnt in de websiteversie</small>`:"Geen foto gevonden";});
   loadLogo(a.name);
 }
 
@@ -1022,7 +1025,7 @@ function viewSong(id){
   const own=s.n>0;
   const q=encodeURIComponent(s.a+" "+s.t);
   const liveS=liveOf(id);
-  const card=cardHTML({coverLabel:"Hoes laden…",logoText:s.a,playId:+id,facts:[
+  const card=cardHTML({coverLabel:"Hoes laden…",logoText:s.a,playId:+id,embed:true,facts:[
     ["Album",s.alb?esc(s.alb):"…","pk-album"],["Jaar",s.yr?esc(s.yr):"…","pk-year"],
     ["Live gezien",liveS?fmt(D.concerts[liveS[0].i].d):"nog niet","",!!liveS],
     ["Spotify-ranglijst",s.spRank?"#"+s.spRank:"–"]]});
