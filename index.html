@@ -363,6 +363,55 @@ footer .wrap{padding-block:18px 28px;color:var(--faint);font-size:12.5px;display
   .artsongs{padding-left:16px}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+/* ---------- homepagina: draaitafel ---------- */
+.dt-head h1{margin-top:12px;font-size:clamp(34px,5.5vw,54px);letter-spacing:-.03em}
+.dt-wrap{display:flex;flex-wrap:wrap;gap:40px;align-items:center;margin-top:24px}
+.dt-stage{flex:1 1 420px;min-width:0;display:flex;justify-content:center}
+.dt-ring{position:relative;width:min(600px,100%);aspect-ratio:1/1}
+.dt-disc{position:absolute;inset:16%;border-radius:50%;box-shadow:0 24px 60px rgba(0,0,0,.55)}
+.dt-vinyl{width:100%;height:100%;display:block;animation:dtspin 3.2s linear infinite}
+.dt-ring.paused .dt-vinyl{animation-play-state:paused}
+@keyframes dtspin{to{transform:rotate(360deg)}}
+.dt-label{position:absolute;inset:31%;border-radius:50%;background:var(--c,var(--accent));color:#131a16;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;text-decoration:none;box-shadow:inset 0 0 0 6px rgba(0,0,0,.12);transition:transform .2s}
+.dt-label:hover{transform:scale(1.04)}
+.dt-label:focus-visible{outline:2px solid var(--fg);outline-offset:4px}
+.dt-label b{font-family:var(--display);font-weight:800;font-size:clamp(26px,6vw,44px);line-height:1}
+.dt-label small{font-size:clamp(10px,2vw,13px);font-weight:500}
+.dt-label i{width:8px;height:8px;border-radius:50%;background:#131a16;margin-top:6px}
+.dt-label.pop{animation:dtpop .5s cubic-bezier(.2,1.4,.4,1)}
+@keyframes dtpop{from{transform:scale(.6);opacity:0}to{transform:none;opacity:1}}
+.dt-arm{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+#dt-arm{transform-origin:86px 14px;transition:transform .8s cubic-bezier(.3,.1,.2,1)}
+.dt-ring.paused #dt-arm{transform:rotate(-28deg)}
+.dt-btn{position:absolute;transform:translate(-50%,-50%);width:88px;height:88px;border-radius:50%;border:1.5px solid var(--line);background:var(--surface);color:var(--fg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;cursor:pointer;font-size:11.5px;line-height:1.1;padding:0;transition:border-color .2s,background .2s,transform .2s,color .2s}
+.dt-btn:hover{border-color:var(--c);transform:translate(-50%,-50%) scale(1.06)}
+.dt-btn:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+.dt-btn.on{background:var(--c);border-color:var(--c);color:#131a16;transform:translate(-50%,-50%) scale(1.1)}
+.dt-btn svg{width:26px;height:26px}
+.dt-info{flex:1 1 340px;min-width:0}
+.dt-in{animation:dtslide .45s ease}
+@keyframes dtslide{from{opacity:0;transform:translateX(16px)}to{opacity:1;transform:none}}
+.dt-side{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:13px}
+.dt-side span{width:10px;height:10px;border-radius:50%}
+.dt-info h2{font-size:clamp(36px,5vw,52px);letter-spacing:-.03em;line-height:1;margin-top:12px}
+.dt-info .lede{margin-top:14px;max-width:46ch}
+.dt-hl{margin:14px 0 0;padding:12px 16px;border-radius:12px;background:var(--surface);border:1px solid var(--line);font-size:15px}
+.dt-hl b{font-weight:500}
+.dt-open{margin-top:20px;min-height:44px;box-sizing:border-box}
+.dt-subs{margin-top:22px}
+.dt-subs a{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:11px 4px;border-top:1px solid var(--line);text-decoration:none;min-height:44px;box-sizing:border-box}
+.dt-subs a:hover{color:var(--accent)}
+.dt-subs a span:last-child{color:var(--faint)}
+.dt-ctl{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px}
+@media (max-width:600px){.dt-btn{width:60px;height:60px}.dt-btn span{display:none}.dt-btn svg{width:22px;height:22px}.dt-wrap{gap:24px}}
+@media (prefers-reduced-motion:reduce){.dt-vinyl,.dt-label.pop,.dt-in{animation:none}}
+/* concerten */
+.co-bars{display:flex;align-items:flex-end;gap:4px;height:150px;margin-top:8px}
+.co-bars button{flex:1 1 0;min-width:0;height:100%;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:4px;background:none;border:0;padding:0;cursor:pointer;color:var(--faint)}
+.co-bars i{display:block;width:100%;border-radius:3px 3px 0 0;background:color-mix(in srgb,var(--accent) 60%,var(--surface))}
+.co-bars button:hover i,.co-bars button[aria-pressed="true"] i{background:var(--accent)}
+.co-bars small{font-size:10.5px}
+.co-bars button[aria-pressed="true"] small{color:var(--fg)}
 /* ---------- top 2000 ---------- */
 .t2-tabs{display:flex;gap:6px;flex-wrap:wrap;margin:-12px 0 28px;padding-bottom:14px;border-bottom:1px solid var(--line)}
 .t2-tabs a{text-decoration:none;color:var(--muted);font-size:13.5px;padding:5px 12px;border:1px solid var(--line);border-radius:999px;white-space:nowrap}
@@ -570,15 +619,12 @@ footer .wrap{padding-block:18px 28px;color:var(--faint);font-size:12.5px;display
   <div class="wrap">
     <a class="brand" href="#start">Maartens Top<span> 100</span></a>
     <nav class="main" aria-label="Hoofdmenu">
-      <a href="#start" data-nav="start">Lijsten</a>
-      <a href="#aller-tijden" data-nav="aller-tijden">Top Aller Tijden</a>
-      <a href="#spotify" data-nav="spotify" title="Spotify-jaarlijsten">Spotify</a>
-      <a href="#alle-nummers" data-nav="alle-nummers">Alle nummers</a>
+      <a href="#lijsten" data-nav="lijsten">Mijn lijsten</a>
       <a href="#artiesten" data-nav="artiesten">Artiesten</a>
-      <a href="#records" data-nav="records">Records</a>
       <a href="#platenkast" data-nav="platenkast">Platenkast</a>
+      <a href="#concerten" data-nav="concerten">Concerten</a>
+      <a href="#spotify" data-nav="spotify" title="Spotify-jaarlijsten">Spotify</a>
       <a href="#top2000" data-nav="top2000" title="NPO Radio 2 Top 2000">Top 2000</a>
-      <a href="#nieuwe-lijst" data-nav="nieuwe-lijst">Nieuwe lijst</a>
     </nav>
     <button class="mic-btn" id="mic-btn" type="button" aria-label="Wat hoor ik? Laat een nummer herkennen" title="Wat hoor ik?">🎤<span> Wat hoor ik?</span></button>
   </div>
@@ -771,21 +817,18 @@ function pickRandom(n){
   return ids.slice(0,n).sort((a,b)=>S[a].rank-S[b].rank);
 }
 let spotlight=pickRandom(5);
-function viewHome(){
+function viewLijsten(){
   const tiles = E.map((e,i)=>({e,i})).reverse().map(({e,i})=>
     `<a class="tile${i===N-1?" latest":""}" href="#lijst-${i+1}"><b>Top 100 · #${i+1}</b><small>${fmt(e.date)}${e.est?" · schatting":e.help?" · met hulp":""}</small></a>`).join("");
   app.innerHTML = `<div class="home">
     <section>
       <h2>Kies je lijst</h2>
-      <p class="lede" style="margin-top:6px">${N} edities, vier overzichten en je platenkast.</p>
+      <p class="lede" style="margin-top:6px">${N} edities en drie overzichten.</p>
       <div class="tiles">${tiles}</div>
       <div class="links">
         <a class="tile" href="#aller-tijden">Top Aller Tijden →</a>
         <a class="tile" href="#alle-nummers">Alle nummers →</a>
-        <a class="tile" href="#artiesten">Artiesten →</a>
         <a class="tile" href="#records">Records & weetjes →</a>
-        <a class="tile" href="#platenkast">Platenkast →</a>
-        <a class="tile" href="#top2000">Top 2000 →</a>
       </div>
     </section>
     <section class="spot" id="spot" aria-live="polite"></section>
@@ -2599,17 +2642,133 @@ function t2Explore(){ const {Y,NE,S,ed,at}=t2(), L=NE-1;
   document.getElementById("t2yr").addEventListener("change",yr); document.getElementById("t2pos").addEventListener("input",pos);
   duel(); yr(); pos(); }
 
+/* ---------- homepagina: draaitafel (15 okt 2026, Maarten koos ontwerp B) ---------- */
+const DT_ICON={
+  lijsten:'<path d="M2.5 20.5h19"/><rect x="9" y="8" width="6" height="12.5"/><rect x="3" y="12" width="6" height="8.5"/><rect x="15" y="14.5" width="6" height="6"/><path d="M12 2.6l.9 1.8 2 .3-1.45 1.4.35 2-1.8-.95-1.8.95.35-2-1.45-1.4 2-.3z"/>',
+  artiesten:'<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0"/><path d="M12 17.5V21"/><path d="M8.5 21h7"/>',
+  platenkast:'<circle cx="12" cy="12" r="9.5"/><path d="M12 5.5a6.5 6.5 0 0 1 6.5 6.5"/><path d="M5.5 12a6.5 6.5 0 0 0 4 6"/><circle cx="12" cy="12" r="2.6"/>',
+  concerten:'<path d="M3.5 6.5h17v3.6a2 2 0 0 0 0 3.8v3.6h-17v-3.6a2 2 0 0 0 0-3.8z"/><path d="M15 6.5v11" stroke-dasharray="1.6 1.8"/><path d="M7 10.5h4.5M7 13.5h3"/>',
+  spotify:'<path d="M4 15v-3a8 8 0 0 1 16 0v3"/><rect x="3" y="14" width="4" height="7" rx="1.5"/><rect x="17" y="14" width="4" height="7" rx="1.5"/>',
+  top2000:'<rect x="2.5" y="8" width="19" height="12.5" rx="2"/><path d="M7 8l10-5"/><circle cx="15.5" cy="14.2" r="3.2"/><path d="M6 12.5h4.5M6 15.8h4.5"/>'
+};
+const dtIcon=k=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${DT_ICON[k]}</svg>`;
+let dtSel=0, dtPlay=true;
+function dtSections(){ const L=E[N-1], top=S[L.rows[0].id];
+  const C=D.concerts||[], V=D.vinyl||[], newest=V.slice().sort((a,b)=>(b.d||"").localeCompare(a.d||""))[0];
+  const seen={}; C.forEach(c=>{ seen[c.a]=(seen[c.a]||0)+1; }); const most=Object.entries(seen).sort((a,b)=>b[1]-a[1])[0];
+  const lastSp=NS?SP[NS-1]:null, spTop=lastSp?S[lastSp.rows[0].id]:null;
+  const T=D.t2k?t2():null, t2top=T?T.S[T.ed[T.NE-1][0]]:null;
+  const yr=d=>d.slice(0,4);
+  return [
+    {k:"lijsten",name:"Mijn lijsten",short:"Lijsten",href:"#lijsten",color:"#d8ef5e",big:N,unit:N===1?"lijst":"lijsten",
+     lede:`Je eigen top 100, sinds ${yr(E[0].date)}. De laatste lijst is van ${fmt(L.date)}.`,hl:`Nu op 1: <b>${esc(top.t)}</b> – ${esc(top.a)}`,
+     subs:[["Laatste lijst","#lijst-"+N],["Top Aller Tijden","#aller-tijden"],["Alle nummers","#alle-nummers"],["Records & weetjes","#records"],["Nieuwe lijst","#nieuwe-lijst"]]},
+    {k:"artiesten",name:"Artiesten",short:"Artiesten",href:"#artiesten",color:"#7cc4ff",big:D.artists.length,unit:"artiesten",
+     lede:"Iedereen die ooit in je lijsten stond, met foto, logo en of je ze live zag.",hl:`Top 3 aller tijden: <b>${D.artists.slice(0,3).map(a=>esc(a.name)).join(", ")}</b>`,
+     subs:[["Alle artiesten","#artiesten"],...D.artists.slice(0,3).map(a=>[a.name,"#artiest-"+slugA(a.name)])]},
+    {k:"platenkast",name:"Platenkast",short:"Platen",href:"#platenkast",color:"#e8893a",big:V.length,unit:"platen",
+     lede:"Je vinyl uit Discogs: op de plank, aan de muur of bladeren in het krat.",hl:newest?`Nieuwste plaat: <b>${esc(newest.t)}</b> – ${esc(newest.a)}`:"",
+     subs:[["De plank","#platenkast","plank"],["De muur","#platenkast","muur"],["Het krat","#platenkast","krat"]]},
+    {k:"concerten",name:"Concerten",short:"Concerten",href:"#concerten",color:"#d07fc0",big:C.length,unit:"concerten",
+     lede:`Alles wat je live zag sinds ${C.length?yr(C[C.length-1].d):""}, met setlists van setlist.fm.`,hl:C.length?`Laatst: <b>${esc(C[0].a)}</b>, ${esc(C[0].v)} (${fmt(C[0].d)})`:"",
+     subs:[["Alle concerten","#concerten"],...(most?[[`${most[0]} (${most[1]}×)`,artistBySlug[slugA(most[0])]?"#artiest-"+slugA(most[0]):"#concerten"]]:[])]},
+    {k:"spotify",name:"Spotify",short:"Spotify",href:"#spotify",color:"#74d98f",big:NS,unit:"jaarlijsten",
+     lede:NS?`Je Spotify-jaarlijsten van ${SP[0].year} tot en met ${SP[NS-1].year}, met een eigen ranglijst.`:"",hl:spTop?`Op 1 in ${lastSp.year}: <b>${esc(spTop.t)}</b> – ${esc(spTop.a)}`:"",
+     subs:lastSp?[["Jaarlijst "+lastSp.year,"#spotify-"+lastSp.year],["Spotify aller tijden","#spotify-aller-tijden"],["Alle jaren","#spotify"]]:[]},
+    {k:"top2000",name:"Top 2000",short:"Top 2000",href:"#top2000",color:"#e8c547",big:T?T.NE:0,unit:"edities",
+     lede:T?`Alle Top 2000-lijsten van NPO Radio 2, van ${T.Y[0]} tot en met ${T.Y[T.NE-1]}.`:"",hl:t2top?`${t2top.ones} keer op 1: <b>${esc(t2top.t)}</b> – ${esc(t2top.a)}`:"",
+     subs:T?[["Editie "+T.Y[T.NE-1],"#top2000-"+T.Y[T.NE-1]],["Aller tijden","#top2000-aller-tijden"],["Records","#top2000-records"],["Ontdek","#top2000-ontdek"]]:[]}
+  ]; }
+function viewHome(){ const SEC=dtSections();
+  const btns=SEC.map((s,k)=>{ const a=(-90+k*60)*Math.PI/180;
+    return `<button type="button" class="dt-btn" data-k="${k}" aria-label="${esc(s.name)}" style="left:${(50+44*Math.cos(a)).toFixed(2)}%;top:${(50+44*Math.sin(a)).toFixed(2)}%;--c:${s.color}">${dtIcon(s.k)}<span>${esc(s.short)}</span></button>`; }).join("");
+  app.innerHTML=`<div class="dt">
+    <div class="dt-head"><div class="eyebrow">Kies een kant</div><h1>Wat leggen we op?</h1></div>
+    <div class="dt-wrap">
+      <div class="dt-stage"><div class="dt-ring" id="dt-ring">
+        <div class="dt-disc"><svg class="dt-vinyl" viewBox="0 0 200 200" aria-hidden="true"><circle cx="100" cy="100" r="100" fill="#0b0f0d"/>${[92,84,76,68,60,52].map((r,i)=>`<circle cx="100" cy="100" r="${r}" fill="none" stroke="${i%2?"#1a231e":"#1f2a24"}"/>`).join("")}<path d="M100 14 A86 86 0 0 1 170 52" fill="none" stroke="#3a4840" stroke-width="2.5" stroke-linecap="round" opacity=".55"/><path d="M30 148 A86 86 0 0 0 64 178" fill="none" stroke="#3a4840" stroke-width="2" stroke-linecap="round" opacity=".35"/></svg>
+          <a class="dt-label" id="dt-label" href="#"></a></div>
+        <svg class="dt-arm" viewBox="0 0 100 100" aria-hidden="true"><g id="dt-arm"><line x1="86" y1="14" x2="72" y2="38" stroke="#a4afa7" stroke-width="1.4" stroke-linecap="round"/><rect x="69.5" y="36.5" width="5" height="4" rx="1" fill="#a4afa7" transform="rotate(30 72 38)"/></g><circle cx="86" cy="14" r="3.4" fill="#212c26" stroke="#a4afa7" stroke-width=".8"/></svg>
+        ${btns}
+      </div></div>
+      <section class="dt-info" id="dt-info" aria-live="polite"></section>
+    </div></div>`;
+  const ring=document.getElementById("dt-ring");
+  const draw=()=>{ const s=SEC[dtSel];
+    ring.querySelectorAll(".dt-btn").forEach(b=>{ const on=+b.dataset.k===dtSel; b.classList.toggle("on",on); b.setAttribute("aria-pressed",on); });
+    ring.classList.toggle("paused",!dtPlay);
+    const lab=document.getElementById("dt-label"); lab.href=s.href; lab.style.setProperty("--c",s.color); lab.setAttribute("aria-label","Open "+s.name);
+    lab.innerHTML=`<b>${nf(s.big)}</b><small>${s.unit}</small><i></i>`; lab.classList.remove("pop"); void lab.offsetWidth; lab.classList.add("pop");
+    const info=document.getElementById("dt-info");
+    info.innerHTML=`<div class="dt-in"><div class="dt-side"><span style="background:${s.color}"></span>Kant ${"ABCDEF"[dtSel]} · nu op de draaitafel</div>
+      <h2>${esc(s.name)}</h2><p class="lede">${s.lede}</p>${s.hl?`<p class="dt-hl">${s.hl}</p>`:""}
+      <a class="btn dt-open" href="${s.href}">Open ${esc(s.name)} →</a>
+      <nav class="dt-subs" aria-label="Snel naar">${s.subs.map(([l,h,pv])=>`<a href="${h}"${pv?` data-pkv="${pv}"`:""}><span>${esc(l)}</span><span aria-hidden="true">→</span></a>`).join("")}</nav>
+      <div class="dt-ctl"><button class="btn ghost" type="button" id="dt-prev">← Vorige</button><button class="btn ghost" type="button" id="dt-next">Volgende →</button><button class="btn ghost" type="button" id="dt-play">${dtPlay?"Pauze":"Draaien"}</button></div></div>`;
+    info.querySelectorAll("[data-pkv]").forEach(a=>a.addEventListener("click",()=>{ pkView=a.dataset.pkv; pkLS.set("pk-view",pkView); }));
+    document.getElementById("dt-prev").onclick=()=>{ dtSel=(dtSel+SEC.length-1)%SEC.length; dtPlay=true; draw(); };
+    document.getElementById("dt-next").onclick=()=>{ dtSel=(dtSel+1)%SEC.length; dtPlay=true; draw(); };
+    document.getElementById("dt-play").onclick=()=>{ dtPlay=!dtPlay; draw(); };
+  };
+  ring.querySelectorAll(".dt-btn").forEach(b=>b.addEventListener("click",()=>{ const k=+b.dataset.k;
+    if(k===dtSel&&dtPlay){ location.hash=SEC[k].href; return; }   // nog eens klikken = openen
+    dtSel=k; dtPlay=true; draw(); }));
+  draw(); }
+
+/* ---------- Mijn lijsten: subtabs voor de eigen lijsten ---------- */
+function lijTabs(h){ const tabs=[["lijsten","Overzicht"],["lijst-"+N,"Laatste lijst"],["aller-tijden","Top Aller Tijden"],["alle-nummers","Alle nummers"],["records","Records"],["nieuwe-lijst","Nieuwe lijst"]];
+  const cur=h.startsWith("reconstructie-")?"nieuwe-lijst":h;
+  return `<nav class="t2-tabs" aria-label="Mijn lijsten">${tabs.map(([k,l])=>`<a href="#${k}"${k===cur?' aria-current="page"':""}>${l}</a>`).join("")}</nav>`; }
+
+/* ---------- concerten (setlist.fm, gebruiker metalmaartenb) ---------- */
+let coQ="", coY="";
+function viewConcerten(){ const C=D.concerts||[];
+  const seen={}; C.forEach(c=>{ seen[c.a]=(seen[c.a]||0)+1; });
+  const most=Object.entries(seen).sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0])).slice(0,8);
+  const ev={}; C.forEach(c=>{ const k=c.v+"|"+c.d; ev[k]=(ev[k]||0)+1; });
+  const days=new Set(C.map(c=>c.d)).size;
+  const fest={}; C.forEach(c=>{ const m=c.v.match(/^(.*?)\s+(19|20)\d\d$/); if(m) fest[m[1]]=(fest[m[1]]||new Set()).add(c.d.slice(0,4)); });
+  const festL=Object.entries(fest).map(([n,s])=>[n,s.size]).sort((a,b)=>b[1]-a[1]).slice(0,6);
+  const years=[...new Set(C.map(c=>c.d.slice(0,4)))].sort();
+  const perY=years.map(y=>C.filter(c=>c.d.startsWith(y)).length), mx=Math.max(...perY,1);
+  const aLink=a=>artistBySlug[slugA(a)]?`<a class="alink" href="#artiest-${slugA(a)}">${esc(a)}</a>`:esc(a);
+  app.innerHTML=`<div class="eyebrow">Live gezien · setlist.fm</div><h1 style="margin-top:10px">Concerten</h1>
+    <p class="lede">${C.length} optredens van ${Object.keys(seen).length} artiesten op ${days} dagen, sinds ${C.length?fmt(C[C.length-1].d):""}.</p>
+    <div class="cards">
+      <div class="card"><h2>Vaakst gezien</h2><p>Optredens per artiest.</p><ol>${most.map(([a,n])=>`<li><a href="${artistBySlug[slugA(a)]?"#artiest-"+slugA(a):"#concerten"}" data-coq="${esc(a)}"><span><span class="title">${esc(a)}</span><small>laatst ${fmt(C.find(c=>c.a===a).d)}</small></span><span class="val">${n}×</span></a></li>`).join("")}</ol></div>
+      <div class="card"><h2>Festivals</h2><p>Aantal jaren dat je erbij was.</p><ol>${festL.map(([n,k])=>`<li><a href="#concerten" data-coq="${esc(n)}"><span><span class="title">${esc(n)}</span><small>${[...fest[n]].sort().join(", ")}</small></span><span class="val">${k}×</span></a></li>`).join("")}</ol></div>
+      <div class="card"><h2>Per jaar</h2><p>Klik op een jaar om te filteren.</p><div class="co-bars">${years.map((y,i)=>`<button type="button" data-coy="${y}" aria-pressed="${coY===y}" title="${y}: ${perY[i]} optredens"><i style="height:${Math.max(4,Math.round(perY[i]/mx*100))}%"></i><small>'${y.slice(2)}</small></button>`).join("")}</div></div>
+    </div>
+    <div class="toolbar"><input class="search" type="search" id="coq" placeholder="Zoek artiest, festival of plaats" aria-label="Zoek in concerten" value="${esc(coQ)}">
+      <select class="sort" id="coy" aria-label="Jaar"><option value="">Alle jaren</option>${years.slice().reverse().map(y=>`<option${y===coY?" selected":""}>${y}</option>`).join("")}</select><span class="count" id="con"></span></div>
+    <div id="corows"></div>`;
+  const draw=()=>{ const q=norm(coQ.trim());
+    const l=C.filter(c=>(!coY||c.d.startsWith(coY))&&(!q||norm(c.a+" "+c.v+" "+c.c).includes(q)));
+    document.getElementById("con").textContent=`${l.length} ${l.length===1?"optreden":"optredens"}`;
+    let html="", cy="";
+    l.forEach(c=>{ const y=c.d.slice(0,4); if(y!==cy){ cy=y; html+=`<div class="group"><h3>${y}</h3><span>${l.filter(x=>x.d.startsWith(y)).length} optredens</span></div>`; }
+      html+=`<div class="concert"><span>${fmt(c.d)}</span><span><b style="font-weight:500">${aLink(c.a)}</b><small>${esc(c.v)}${c.c&&!c.v.includes(c.c)?", "+esc(c.c):""}</small></span>${c.u?`<a href="${esc(c.u)}" target="_blank" rel="noopener">setlist ↗</a>`:"<span></span>"}</div>`; });
+    document.getElementById("corows").innerHTML=html||'<div class="empty">Geen concerten gevonden.</div>';
+    app.querySelectorAll("[data-coy]").forEach(b=>b.setAttribute("aria-pressed",b.dataset.coy===coY)); };
+  document.getElementById("coq").addEventListener("input",e=>{ coQ=e.target.value; draw(); });
+  document.getElementById("coy").addEventListener("change",e=>{ coY=e.target.value; draw(); });
+  app.querySelectorAll("[data-coy]").forEach(b=>b.addEventListener("click",()=>{ coY=coY===b.dataset.coy?"":b.dataset.coy; document.getElementById("coy").value=coY; draw(); }));
+  app.querySelectorAll("a[data-coq]").forEach(a=>{ if(a.getAttribute("href")==="#concerten") a.addEventListener("click",e=>{ e.preventDefault(); coQ=a.dataset.coq; document.getElementById("coq").value=coQ; draw(); document.getElementById("coq").scrollIntoView({block:"center"}); }); });
+  draw(); }
+
 /* ---------- router ---------- */
 function route(){
   const h=location.hash.slice(1)||"start";
   let nav="start";
-  if(h.startsWith("lijst-")) viewEdition(+h.slice(6)-1);
+  if(h.startsWith("lijst-")) {viewEdition(+h.slice(6)-1); nav="lijsten";}
+  else if(h==="lijsten"){viewLijsten();nav="lijsten";}
+  else if(h==="concerten"){viewConcerten();nav="concerten";}
   else if(h.startsWith("nummer-")) {viewSong(+h.slice(7)); nav="";}
   else if(h.startsWith("artiest-")) {viewArtist(h.slice(8)); nav="artiesten";}
-  else if(h==="aller-tijden"){viewAllTime();nav=h;}
-  else if(h==="alle-nummers"){viewAll();nav=h;}
+  else if(h==="aller-tijden"){viewAllTime();nav="lijsten";}
+  else if(h==="alle-nummers"){viewAll();nav="lijsten";}
   else if(h==="artiesten"){viewArtists();nav=h;}
-  else if(h==="records"){viewRecords();nav=h;}
+  else if(h==="records"){viewRecords();nav="lijsten";}
   else if(h==="platenkast"){viewPlatenkast();nav=h;}
   else if(h==="top2000"){t2Home();nav="top2000";}
   else if(/^top2000-\d{4}$/.test(h)){t2Edition(+h.slice(8));nav="top2000";}
@@ -2620,13 +2779,14 @@ function route(){
   else if(h==="top2000-records"){t2Records();nav="top2000";}
   else if(h==="top2000-ontdek"){t2Explore();nav="top2000";}
   else if(h==="spotify-koppelen"){viewLink();nav="";}
-  else if(h==="nieuwe-lijst"){viewNieuweLijst();nav="nieuwe-lijst";}
-  else if(h.startsWith("reconstructie-")){viewReco();nav="nieuwe-lijst";}
+  else if(h==="nieuwe-lijst"){viewNieuweLijst();nav="lijsten";}
+  else if(h.startsWith("reconstructie-")){viewReco();nav="lijsten";}
   else if(h==="herkend"){viewHerkend();nav="";}
   else if(h==="spotify"){viewSpotify();nav="spotify";}
   else if(h==="spotify-aller-tijden"){viewSpotifyRank();nav="spotify";}
   else if(/^spotify-\d{4}$/.test(h)){viewSpotifyYear(+h.slice(8));nav="spotify";}
   else viewHome();
+  if(nav==="lijsten") app.insertAdjacentHTML("afterbegin",lijTabs(h));
   document.querySelectorAll("nav.main a").forEach(a=>{ if(a.dataset.nav===nav) a.setAttribute("aria-current","page"); else a.removeAttribute("aria-current"); });
   try{const cur=document.querySelector("nav.main a[aria-current]"); if(cur) cur.scrollIntoView({inline:"center",block:"nearest"});}catch(e){}
   window.scrollTo(0,0);
