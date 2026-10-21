@@ -91,6 +91,7 @@ h3{font-size:18px}
 .player{position:fixed;left:50%;bottom:calc(12px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);width:min(560px,calc(100vw - 24px));z-index:35;background:var(--surface-2);border:1px solid var(--line);border-radius:14px;padding:8px 8px 4px;box-shadow:0 10px 40px rgba(0,0,0,.5)}
 .player iframe{display:block;width:100%;height:80px;border:0;border-radius:10px}
 .player[hidden]{display:none}
+body:has(#player:not([hidden])) footer{padding-bottom:110px}
 .player .x{position:absolute;top:-12px;right:-8px;width:28px;height:28px;border-radius:50%;border:1px solid var(--line);background:var(--surface);color:var(--fg);cursor:pointer;font-size:14px;line-height:1}
 .player .x:hover{border-color:var(--accent);color:var(--accent)}
 .toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--surface-2);border:1px solid var(--line);color:var(--fg);padding:10px 16px;border-radius:12px;font-size:14px;max-width:min(92vw,520px);z-index:20;box-shadow:0 8px 30px rgba(0,0,0,.4)}
@@ -385,7 +386,8 @@ footer .wrap{padding-block:18px 28px;color:var(--faint);font-size:12.5px;display
 @keyframes spokeflow{to{stroke-dashoffset:-24}}
 .hub-lp{position:absolute;left:50%;top:50%;width:31.7%;aspect-ratio:1/1;transform:translate(-50%,-50%);border-radius:50%;box-shadow:0 24px 70px rgba(0,0,0,.7)}
 .dt-vinyl{width:100%;height:100%;display:block;animation:dtspin 3.2s linear infinite}
-.hub.paused .dt-vinyl,.hub.paused .ringspin{animation-play-state:paused}
+.hub .dt-vinyl{animation-play-state:paused}
+html.sp-playing .hub .dt-vinyl,.hub.fake .dt-vinyl{animation-play-state:running}
 @keyframes dtspin{to{transform:rotate(360deg)}}
 .dt-label{position:absolute;inset:31%;border-radius:50%;background:var(--c,var(--accent));color:var(--ink,#131a16);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;text-decoration:none;box-shadow:inset 0 0 0 6px rgba(0,0,0,.14);transition:transform .2s}
 .dt-label:hover{transform:scale(1.05)}
@@ -396,8 +398,8 @@ footer .wrap{padding-block:18px 28px;color:var(--faint);font-size:12.5px;display
 .dt-label.pop{animation:dtpop .5s cubic-bezier(.2,1.4,.4,1)}
 @keyframes dtpop{from{transform:scale(.6);opacity:0}to{transform:none;opacity:1}}
 .dt-arm{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
-#dt-arm{transform-origin:86px 14px;transition:transform .8s cubic-bezier(.3,.1,.2,1)}
-.hub.paused #dt-arm{transform:rotate(-28deg)}
+#dt-arm{transform-origin:86px 14px;transition:transform .8s cubic-bezier(.3,.1,.2,1);transform:rotate(-28deg)}
+html.sp-playing .hub #dt-arm,.hub.fake #dt-arm{transform:none}
 .hub-tile{position:absolute;transform:translate(-50%,-50%);width:14.4%;aspect-ratio:1/1;padding:0;border:0;background:none;cursor:pointer;color:var(--fg);transition:transform .25s}
 .hub-tile .badge{position:absolute;inset:0;border-radius:50%;transition:transform .3s cubic-bezier(.2,1.3,.4,1),filter .3s;filter:drop-shadow(0 10px 18px rgba(0,0,0,.55))}
 .hub-tile .badge svg,.hub-tile .badge img{width:100%;height:100%;display:block;border-radius:50%}
@@ -753,7 +755,9 @@ const mcpP=(window.claude&&window.claude.use?window.claude.use("mcp"):Promise.re
 const IS_CLAUDE=!!(window.claude&&window.claude.use);
 if(!IS_CLAUDE){ const fl=document.getElementById("foot-link"); if(fl) fl.remove(); }
 // Spotify iFrame API: de speler start meteen na een klik op ▶ (één klik).
-let spApiP=null, spCtl=null, spWant=null, pkCtl=null;
+// Eén speler voor de hele site (onderin, blijft staan als je naar een andere pagina gaat).
+// Wie speelt: spOwner = "song" (▶ bij een nummer) of "pk" (platenkast). spPlaying = speelt er nu iets.
+let spApiP=null, spCtl=null, spWant=null, spOwner=null, spPlaying=false, spUri=null;
 function spApi(){ if(spApiP) return spApiP;
   spApiP=new Promise(res=>{ window.onSpotifyIframeApiReady=api=>res(api); const sc=document.createElement("script"); sc.src="https://open.spotify.com/embed/iframe-api/v1"; sc.async=true; sc.onerror=()=>res(null); document.head.appendChild(sc); });
   return spApiP; }
@@ -763,18 +767,27 @@ function playerBox(){
     el.innerHTML='<button class="x" type="button" aria-label="Speler sluiten">✕</button><div id="player-slot"></div>'; document.body.appendChild(el);
     el.querySelector(".x").addEventListener("click",()=>{ try{spCtl&&spCtl.pause();}catch(e){} el.hidden=true; }); }
   el.hidden=false; return el; }
-function showPlayerIframe(trackId,label){ const el=playerBox(); el.querySelector("#player-slot").innerHTML=`<iframe title="${esc(label)}" src="https://open.spotify.com/embed/track/${encodeURIComponent(trackId)}?utm_source=generator&theme=0" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"></iframe>`; }
-async function showPlayer(trackId,label){
-  const uri="spotify:track:"+trackId; spWant=uri; playerBox(); try{ pkCtl&&pkCtl.pause(); }catch(e){}
+function spNotify(){ document.documentElement.classList.toggle("sp-playing",spPlaying);
+  if(spOwner==="pk") pkSet(spPlaying); else pkTT();
+  if(typeof homeSync==="function") homeSync(); }
+function spUpd(d){ const dur=d.duration||0, pos=d.position||0;
+  if(spOwner==="pk"&&pkQ_.length&&pkQi>=0&&dur>0&&Date.now()>pkLock&&d.isPaused&&(pos>=dur-1500||(pkLastPos>=dur-4000&&pos<1000))){ pkLastPos=0; pkEnded(); return; }
+  if(spOwner==="pk"&&(!d.isPaused||pos>0)) pkLastPos=pos;
+  spPlaying=!d.isPaused; spNotify(); }
+async function spLoad(uri,owner,label){
+  if(owner!=="pk"&&spOwner==="pk") pkSet(false);
+  spOwner=owner; spUri=uri; spWant=uri; playerBox();
   const api=await spApi();
-  if(!api){ showPlayerIframe(trackId,label); return; }
+  if(!api){ const [,ty,id]=uri.split(":"); document.getElementById("player-slot").innerHTML=`<iframe title="${esc(label||"Spotify")}" src="https://open.spotify.com/embed/${ty}/${encodeURIComponent(id)}?utm_source=generator&theme=0" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"></iframe>`; return; }
   const tryPlay=()=>{ if(spCtl&&spWant){ try{ spCtl.play(); }catch(e){} spWant=null; } };
   if(spCtl){ spCtl.loadUri(uri); setTimeout(tryPlay,700); return; }
   const slot=document.getElementById("player-slot"); slot.innerHTML='<div id="player-embed"></div>';
   api.createController(document.getElementById("player-embed"),{uri,width:"100%",height:80},ctl=>{
     spCtl=ctl; ctl.addListener("ready",()=>setTimeout(tryPlay,150));
+    ctl.addListener("playback_update",e=>spUpd((e&&e.data)||{}));
     setTimeout(tryPlay,1500); });
 }
+function showPlayer(trackId,label){ return spLoad("spotify:track:"+trackId,"song",label); }
 document.addEventListener("click",ev=>{
   if(IS_CLAUDE) return;
   const a=ev.target.closest("a.play:not(.prev)"); if(!a||ev.ctrlKey||ev.metaKey||ev.shiftKey) return;
@@ -1167,7 +1180,7 @@ function cardHTML({coverLabel,logoText,playId,facts,embed}){
   return `<aside class="platenkaart" aria-label="Platenkaart">
     <div class="pk-cover" id="pk-cover">${coverLabel}</div>
     <div class="pk-logo name" id="pk-logo">${esc(logoText)}</div>
-    ${tid?`<div class="pk-player"><iframe title="Spotify-speler: ${esc(S[playId].t)}" src="https://open.spotify.com/embed/track/${encodeURIComponent(tid)}?utm_source=generator&theme=0" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe></div>`:(playId?playHTML(playId,true):"")}
+    ${tid?`<a class="play big found" href="https://open.spotify.com/track/${encodeURIComponent(tid)}" target="_blank" rel="noopener" aria-label="Speel ${esc(S[playId].t)} van ${esc(S[playId].a)} af">▶ Afspelen</a>`:(playId?playHTML(playId,true):"")}
     <div class="pk-facts">${facts.map(([k,v,id,acc])=>`<div><span>${k}</span><b${id?` id="${id}"`:""}${acc?' class="acc"':""}>${v}</b></div>`).join("")}</div>
   </aside>`;
 }
@@ -2332,27 +2345,19 @@ function pkPlayQ(i,auto=true){ if(!pkQ_.length) return; pkQi=Math.max(0,Math.min
   if(IS_CLAUDE){ pkSet(true); return; } pkLoad("spotify:"+pkQ_[pkQi].s,auto); }
 function pkEnded(){ if(pkQi<pkQ_.length-1) pkPlayQ(pkQi+1,true); else { pkQi=0; pkNowUpd(); pkSet(false); } }
 function pkPlayLbl(v){ return pkPlaying?"❚❚ Pauze":(pkPlayable(v)&&!IS_CLAUDE?"▶ Afspelen":"▶ Laat draaien"); }
-function pkSet(on){ pkPlaying=!!on; const tt=document.getElementById("pk-tt"); if(tt) tt.classList.toggle("playing",pkPlaying);
+function pkSet(on){ pkPlaying=!!on;
   const e=document.getElementById("pk-eye"); if(e) e.textContent=pkEye();
   const b=document.getElementById("pk-play"); if(b) b.textContent=pkPlayLbl(pkByR(pkCur));
   const s=document.getElementById("pk-start"); if(s){ s.textContent=pkPlaying?"Stop":"Start"; s.setAttribute("aria-label",pkPlaying?"Stop de plaat":"Start de plaat"); }
-  if(pkPlaying){ try{ spCtl&&spCtl.pause(); }catch(err){} } }
-async function pkLoad(uri,autoplay){ pkWant=!!autoplay; const api=await spApi(); const em=document.getElementById("pk-embed"); if(!em) return;
-  if(!api){ const [,ty,id]=uri.split(":"); em.innerHTML=`<iframe title="Spotify" height="152" src="https://open.spotify.com/embed/${ty}/${id}?utm_source=generator&theme=0" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"></iframe>`; return; }
-  const tryPlay=()=>{ if(pkCtl&&pkWant){ pkWant=false; try{ pkCtl.play(); }catch(e){} } };
-  if(pkCtl&&document.body.contains(em.querySelector("iframe"))){ pkCtl.loadUri(uri); if(pkWant) setTimeout(tryPlay,700); return; }
-  pkCtl=null; em.innerHTML='<div id="pk-embed-in"></div>';
-  api.createController(document.getElementById("pk-embed-in"),{uri,width:"100%",height:152},ctl=>{ pkCtl=ctl;
-    ctl.addListener("ready",()=>setTimeout(tryPlay,150));
-    ctl.addListener("playback_update",e=>{ const d=(e&&e.data)||{}; if(document.getElementById("pk-embed")!==em) return;
-      const dur=d.duration||0, pos=d.position||0;
-      if(pkQ_.length&&pkQi>=0&&dur>0&&Date.now()>pkLock&&d.isPaused&&(pos>=dur-1500||(pkLastPos>=dur-4000&&pos<1000))){ pkLastPos=0; pkEnded(); return; }
-      if(!d.isPaused||pos>0) pkLastPos=pos; pkSet(!d.isPaused); });
-    setTimeout(tryPlay,1500); }); }
+  pkTT(); }
+/* de plaat draait zolang er iets van Spotify speelt (ook een nummer van elders op de site) */
+function pkTT(){ const tt=document.getElementById("pk-tt"); if(tt) tt.classList.toggle("playing",pkPlaying||spPlaying); }
+let pkPlayR=null;   // de plaat die nu in de speler zit
+function pkLoad(uri,autoplay){ if(!autoplay) return; pkPlayR=pkCur; spLoad(uri,"pk","Platenkast"); }
 function pkToggle(){ const v=pkByR(pkCur);
   if(!v){ const l=pkList_.length?pkList_:pkAll(); const r=l[Math.floor(Math.random()*l.length)]; if(r) pkPick(r.r); return; }
   if(!pkPlayable(v)||IS_CLAUDE){ pkSet(!pkPlaying); return; }
-  if(pkCtl){ try{ pkCtl.togglePlay(); }catch(e){} return; }
+  if(spOwner==="pk"&&pkPlayR===v.r&&spCtl){ try{ spCtl.togglePlay(); }catch(e){} return; }
   if(v.sp) pkLoad("spotify:"+v.sp,true); else pkPlayQ(Math.max(0,pkQi),true); }
 function pkArtistLink(a){ const ar=artistBySlug[slugA(a)]||artistBySlug[slugA(a.replace(/^the\s+/i,""))];
   return ar?`<a class="alink" href="#artiest-${slugA(ar.name)}">${esc(a)}</a>`:esc(a); }
@@ -2371,7 +2376,7 @@ function pkNP(v){ const el=document.getElementById("pk-np"); if(!el) return;
   if(pv) pv.addEventListener("click",()=>pkPlayQ(pkQi-1)); if(nx) nx.addEventListener("click",()=>pkPlayQ(pkQi+1));
   pkNowUpd();
   document.getElementById("pk-play").addEventListener("click",pkToggle);
-  document.getElementById("pk-back").addEventListener("click",()=>{ try{ pkCtl&&pkCtl.pause(); }catch(e){} pkDeck(null,false); }); }
+  document.getElementById("pk-back").addEventListener("click",()=>{ if(spOwner==="pk"){ try{ spCtl&&spCtl.pause(); }catch(e){} } pkDeck(null,false); }); }
 function pkTracks(v){ const el=document.getElementById("pk-tl"); if(!el) return; el.innerHTML=""; if(!v) return;
   const draw=o=>{ if(pkCur!==v.r||!el.isConnected) return; if(!o||!o.tl||!o.tl.length){ el.innerHTML=""; return; }
     const tset=pkTopOf(v).map(id=>[normT(S[id].t),id]), sides={}, order=[];
@@ -2396,9 +2401,12 @@ function pkDeck(v,autoplay){ pkCur=v?v.r:null; pkLS.set("pk-cur",pkCur);
   pkNP(v); pkTracks(v);
   if(pkView==="krat") pkKratDraw();
   const em=document.getElementById("pk-embed");
-  pkQ_=pkQueueOf(v); pkQi=pkQ_.length?0:-1; pkLastPos=0; pkNowUpd();
-  if(!pkPlayable(v)||IS_CLAUDE){ em.hidden=true; try{ pkCtl&&pkCtl.pause(); }catch(e){} pkSet(!!(v&&autoplay)); return; }
-  em.hidden=false; pkSet(false); if(v.sp) pkLoad("spotify:"+v.sp,autoplay); else pkPlayQ(0,autoplay); }
+  const same=!!v&&v.r===pkPlayR&&spOwner==="pk";   // dezelfde plaat speelt nog (bv. na een andere pagina): laten doorspelen
+  if(em) em.hidden=true;
+  if(!same){ pkQ_=pkQueueOf(v); pkQi=pkQ_.length?0:-1; pkLastPos=0; } pkNowUpd();
+  if(!pkPlayable(v)||IS_CLAUDE){ if(spOwner==="pk"&&!IS_CLAUDE){ try{ spCtl&&spCtl.pause(); }catch(e){} } pkSet(!!(v&&autoplay)); return; }
+  if(same&&!autoplay){ pkSet(spPlaying); return; }
+  pkSet(false); if(autoplay){ if(v.sp) pkLoad("spotify:"+v.sp,true); else pkPlayQ(0,true); } }
 function pkPick(r,auto=true){ const v=pkByR(r); if(!v) return;
   if(pkView==="krat"){ const i=pkList_.findIndex(x=>x.r===r); if(i>=0) pkK=i; }
   pkDeck(v,auto);
@@ -2408,7 +2416,7 @@ function pkSyncStatus(){ const el=document.getElementById("pk-syncst"); if(!el) 
   el.textContent=(t?"Laatst gesynchroniseerd: "+new Date(t).toLocaleString("nl-NL",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"}):"Nog niet gesynchroniseerd")+` · tracklists opgehaald: ${n} van ${pkAll().length}`+(dgTok()?" · token ingesteld":""); }
 
 function viewPlatenkast(){
-  pkCtl=null; pkPlaying=false; pkWant=false;
+  pkWant=false;
   const all=pkAll(), nSp=all.filter(pkPlayable).length;
   const chips=[["all","Alles"],["top","In mijn top 100"],["sp","Op Spotify"],["single","Singles & EP's"]];
   app.innerHTML=`<div class="pk-head"><div><div class="eyebrow" id="pk-n">Discogs · ${all.length} platen</div><h1 style="margin-top:10px">Mijn platenkast</h1>
@@ -2690,7 +2698,9 @@ function badgeSVG(k){ const id="bg"+k, N=BG_NAVY, C=BG_CREAM;
     lijsten:{sky:"#2bb3b1",ray:"#56cfc8",sun:[64,40],text:"MIJN LIJSTEN"},
     artiesten:{sky:"#fbe3b8",ray:"#f6c77a",sun:[70,44],text:"ARTIESTEN"},
     platenkast:{sky:"#e8412c",ray:"#f2683a",sun:[66,42],text:"PLATENKAST"},
-    concerten:{sky:"#2a2f5c",ray:"#343a6e",sun:[96,40],text:"CONCERTEN"}
+    concerten:{sky:"#2a2f5c",ray:"#343a6e",sun:[96,40],text:"CONCERTEN"},
+    spotify:{sky:"#1f9d64",ray:"#33b97a",sun:[70,42],text:"SPOTIFY"},
+    top2000:{sky:"#f7c948",ray:"#ffdc7e",sun:[64,40],text:"TOP 2000"}
   }[k];
   let art="";
   if(k==="lijsten") art=`
@@ -2727,6 +2737,22 @@ function badgeSVG(k){ const id="bg"+k, N=BG_NAVY, C=BG_CREAM;
     <path d="M10 140V118Q22 106 34 118Q46 104 58 116Q70 102 84 114Q98 100 112 114Q126 102 140 116Q152 104 164 116Q176 106 190 118V140Z" fill="${N}"/>
     ${[22,46,70,98,124,150,176].map((x,i)=>`<circle cx="${x}" cy="${106+(i%3)*3}" r="${9+(i%2)}" fill="${N}"/>`).join("")}
     ${bStar(30,40,4,C)}${bStar(172,46,3.4,C)}${bStar(156,30,2.6,"#f7c948")}`;
+  if(k==="spotify") art=`
+    <path d="M56 96A44 44 0 0 1 144 96" fill="none" stroke="${N}" stroke-width="9" stroke-linecap="round"/>
+    <rect x="46" y="88" width="20" height="34" rx="7" fill="${N}"/><rect x="134" y="88" width="20" height="34" rx="7" fill="${N}"/>
+    ${[[78,104],[88,92],[98,84],[108,96],[118,106]].map(([x,y])=>`<rect x="${x}" y="${y}" width="7" height="${130-y}" rx="2" fill="${N}"/>`).join("")}
+    <path d="M40 54v-16l12-3v16" fill="none" stroke="${N}" stroke-width="3" stroke-linejoin="round"/><circle cx="37" cy="55" r="4" fill="${N}"/><circle cx="49" cy="52" r="4" fill="${N}"/>
+    <path d="M152 54v-14" stroke="${N}" stroke-width="3"/><circle cx="148" cy="55" r="4.4" fill="${N}"/><path d="M152 40q8 3 6 11" fill="none" stroke="${N}" stroke-width="3" stroke-linecap="round"/>
+    ${bStar(64,30,4,C)}${bStar(140,64,3,C)}`;
+  if(k==="top2000") art=`
+    <path d="M140 80L154 50" stroke="${N}" stroke-width="3.5" stroke-linecap="round"/><circle cx="155" cy="48" r="4" fill="${N}"/>
+    <path d="M162 44a12 12 0 0 1 2 13M167 37a21 21 0 0 1 4 24" fill="none" stroke="${N}" stroke-width="3" stroke-linecap="round"/>
+    <rect x="44" y="78" width="112" height="54" rx="10" fill="${N}"/>
+    <circle cx="76" cy="105" r="18" fill="#2a2f5c"/><path d="M62 98H90M60 105H92M62 112H90" stroke="${C}" stroke-opacity=".55" stroke-width="2.4" stroke-linecap="round"/>
+    <rect x="102" y="88" width="44" height="17" rx="3" fill="${C}"/><path d="M108 92v4M115 92v6M122 92v4M129 92v6M136 92v4" stroke="${N}" stroke-width="1.4"/><path d="M124 89v15" stroke="#e8412c" stroke-width="2.4"/>
+    <circle cx="112" cy="118" r="6" fill="#2a2f5c"/><circle cx="136" cy="118" r="6" fill="#2a2f5c"/><path d="M112 113v4M136 113v4" stroke="${C}" stroke-width="1.6"/>
+    <text x="96" y="68" font-size="31" fill="${N}" text-anchor="middle" font-family="Anton,Impact,sans-serif" letter-spacing="1">2000</text>
+    ${bStar(40,52,4,"#e8412c")}${bStar(56,36,3,C)}`;
   const sunCy=cfg.sun[0], sunR=cfg.sun[1];
   return `<svg viewBox="0 0 200 200" aria-hidden="true" class="badge-svg">
     <defs><linearGradient id="${id}s" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffd65a"/><stop offset=".55" stop-color="#f7931e"/><stop offset="1" stop-color="#e8412c"/></linearGradient>
@@ -2808,7 +2834,7 @@ function viewHome(){ const SEC=dtSections(), W=HUB.W, H=HUB.H;
   const draw=()=>{ const s=SEC[dtSel];
     hub.querySelectorAll(".hub-tile").forEach(b=>{ const on=+b.dataset.k===dtSel; b.classList.toggle("on",on); b.setAttribute("aria-pressed",on); });
     hub.querySelectorAll(".spoke").forEach(l=>l.classList.toggle("on",+l.dataset.k===dtSel));
-    hub.classList.toggle("paused",!dtPlay);
+    hub.classList.toggle("fake",IS_CLAUDE&&dtPlay);
     const lab=document.getElementById("dt-label"); lab.href=s.href; lab.style.setProperty("--c",s.color); lab.style.setProperty("--ink",s.ink); lab.setAttribute("aria-label","Open "+s.name);
     lab.innerHTML=`<b>${nf(s.big)}</b><small>${s.unit}</small><i></i>`; lab.classList.remove("pop"); void lab.offsetWidth; lab.classList.add("pop");
     const pu=document.getElementById("hub-pulse"); pu.style.stroke=s.color; pu.classList.remove("go"); void pu.getBoundingClientRect(); pu.classList.add("go");
@@ -2816,18 +2842,24 @@ function viewHome(){ const SEC=dtSections(), W=HUB.W, H=HUB.H;
     info.innerHTML=`<div class="dt-in"><div class="dt-side"><span style="background:${s.color}"></span>Kant ${"ABCDEF"[dtSel]} · nu op de draaitafel</div>
       <h2>${esc(s.name)}</h2><p class="lede">${s.lede}</p>${s.hl?`<p class="dt-hl">${s.hl}</p>`:""}
       <div class="dt-acts"><a class="btn dt-open" href="${s.href}">Open ${esc(s.name)} →</a>${s.subs.map(([l,h,pv])=>`<a class="dt-chip" href="${h}"${pv?` data-pkv="${pv}"`:""}>${esc(l)}</a>`).join("")}</div>
-      <div class="dt-ctl"><button class="btn ghost" type="button" id="dt-prev" aria-label="Vorige kant">←</button><button class="btn ghost" type="button" id="dt-play">${dtPlay?"Pauze":"Draaien"}</button><button class="btn ghost" type="button" id="dt-next" aria-label="Volgende kant">→</button></div></div>`;
+      <div class="dt-ctl"><button class="btn ghost" type="button" id="dt-prev" aria-label="Vorige kant">←</button><button class="btn ghost" type="button" id="dt-play">${homePlayLbl()}</button><button class="btn ghost" type="button" id="dt-next" aria-label="Volgende kant">→</button></div></div>`;
     info.querySelectorAll("[data-pkv]").forEach(a=>a.addEventListener("click",()=>{ pkView=a.dataset.pkv; pkLS.set("pk-view",pkView); }));
     document.getElementById("dt-prev").onclick=()=>{ dtSel=(dtSel+SEC.length-1)%SEC.length; dtPlay=true; draw(); };
     document.getElementById("dt-next").onclick=()=>{ dtSel=(dtSel+1)%SEC.length; dtPlay=true; draw(); };
-    document.getElementById("dt-play").onclick=()=>{ dtPlay=!dtPlay; draw(); };
+    document.getElementById("dt-play").onclick=()=>{ if(IS_CLAUDE){ dtPlay=!dtPlay; draw(); return; } homePlay(); };
   };
   hub.querySelectorAll(".hub-tile").forEach(b=>{ const k=+b.dataset.k;
     b.addEventListener("mouseenter",()=>hot(k,true)); b.addEventListener("mouseleave",()=>hot(k,false));
     b.addEventListener("focus",()=>hot(k,true)); b.addEventListener("blur",()=>hot(k,false));
-    b.addEventListener("click",()=>{ if(k===dtSel&&dtPlay){ location.hash=SEC[k].href; return; } dtSel=k; dtPlay=true; draw(); }); });
+    b.addEventListener("click",()=>{ if(k===dtSel){ location.hash=SEC[k].href; return; } dtSel=k; draw(); }); });
   draw(); stageStart(document.getElementById("stage-bg")); }
 
+/* knop onder de draaitafel: pauze / verder spelen, of (als er nog niets speelt) een nummer uit je top 100 opzetten */
+function homePlayLbl(){ if(IS_CLAUDE) return dtPlay?"Pauze":"Draaien"; return spPlaying?"❚❚ Pauze":spCtl&&spOwner?"▶ Verder spelen":"▶ Leg een plaat op"; }
+function homeSync(){ const b=document.getElementById("dt-play"); if(b) b.textContent=homePlayLbl(); }
+function homePlay(){ if(spCtl&&spOwner){ try{ spCtl.togglePlay(); }catch(e){} return; }
+  const c=D.alltime.slice(0,100).filter(id=>embedId(id)); const id=c[Math.floor(Math.random()*c.length)];
+  if(id){ showPlayer(embedId(id),S[id].t); toast(`Op de draaitafel: ${S[id].t} – ${S[id].a}`); } }
 /* bewegend podium: lichtbundels, nevel, bokeh en publiek (canvas) */
 function stageStart(cv){ if(!cv) return; const ctx=cv.getContext("2d"); if(!ctx) return;
   const still=window.matchMedia&&matchMedia("(prefers-reduced-motion: reduce)").matches;
